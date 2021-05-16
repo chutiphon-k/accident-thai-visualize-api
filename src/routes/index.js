@@ -1,4 +1,10 @@
+import fs from 'fs';
+import path from 'path';
 import { Router } from 'express';
+import csvtojson from 'csvtojson';
+
+import Boom from 'boom';
+import { AccidentModel } from '../models';
 
 const router = Router();
 
@@ -16,5 +22,28 @@ const router = Router();
  *                type: string
 */
 router.get('/health', (req, res) => res.status(200).send('🩺 service is available'));
+
+/**
+ * @swagger
+ * /datasets:
+ *  post:
+ *    summary: Bulk create dataset
+ *    responses:
+ *      200:
+ *        description: Return "ok"
+ *
+*/
+router.post('/datasets', async (req, res) => {
+  const filename = 'dataset.csv';
+  const filePath = path.join(__dirname, `../../temp/${filename}`);
+
+  if (!fs.existsSync(filePath)) throw Boom.notFound('dateset file not found, please check path or filename');
+
+  const json = await csvtojson().fromFile(filePath);
+  await AccidentModel.deleteMany();
+  await AccidentModel.insertMany(json);
+
+  res.status(200).send('ok');
+});
 
 export default router;
