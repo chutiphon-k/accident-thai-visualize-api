@@ -2,9 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import { Router } from 'express';
 import csvtojson from 'csvtojson';
-
 import Boom from 'boom';
+
 import { AccidentModel } from '../models';
+import stats from './stats';
 
 const router = Router();
 
@@ -45,5 +46,7 @@ router.post('/datasets', async (req, res) => {
 
   res.status(200).send('ok');
 });
+
+router.use('/stats', stats);
 
 export default router;
