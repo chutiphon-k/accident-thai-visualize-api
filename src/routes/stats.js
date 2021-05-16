@@ -1,7 +1,13 @@
 import { Router } from 'express';
+import { keyBy } from 'lodash';
+
 import { AccidentModel } from '../models';
+import { enumerateBetweenYear } from '../utils';
 
 const router = Router();
+
+const START_YEAR = '2010';
+const END_YEAR = '2019';
 
 /**
  * @swagger
@@ -28,11 +34,11 @@ const router = Router();
  *                    year:
  *                      type: string
  *                    count:
- *                      type: string
+ *                      type: integer
 */
 router.get('/year-accident-count', async (req, res) => {
   const results = await AccidentModel.aggregate([
-    { $match: { ACCIDENT_YEAR: { $gte: '2010', $lte: '2019' } } },
+    { $match: { ACCIDENT_YEAR: { $gte: START_YEAR, $lte: END_YEAR } } },
     {
       $group: {
         _id: '$ACCIDENT_YEAR',
@@ -44,12 +50,19 @@ router.get('/year-accident-count', async (req, res) => {
     { $sort: { year: 1 } },
   ]);
 
-  res.status(200).json(results);
+  const years = enumerateBetweenYear(START_YEAR, END_YEAR);
+  const resultsKeyByYear = keyBy(results, 'year');
+  const finalizedResults = years.map((year) => ({
+    year,
+    count: resultsKeyByYear[year]?.count || 0,
+  }));
+
+  res.status(200).json(finalizedResults);
 });
 
 /**
  * @swagger
- * /stats/year-gener-accident-count:
+ * /stats/year-gender-accident-count:
  *   get:
  *     summary: Get accident count group by year, gender
  *     tags: [Stat]
@@ -65,12 +78,46 @@ router.get('/year-accident-count', async (req, res) => {
  *                    year:
  *                      type: string
  *                    maleCount:
- *                      type: string
+ *                      type: integer
  *                    femaleCount:
- *                      type: string
+ *                      type: integer
  *
 */
-router.get('/year-gender-accident-count', (req, res) => res.status(200).send('year-gener-accident-count'));
+router.get('/year-gender-accident-count', async (req, res) => {
+  const results = await AccidentModel.aggregate([
+    { $match: { ACCIDENT_YEAR: { $gte: START_YEAR, $lte: END_YEAR } } },
+    {
+      $group: {
+        _id: { year: '$ACCIDENT_YEAR' },
+        year: { $first: '$ACCIDENT_YEAR' },
+        maleCount: {
+          $sum: {
+            $cond: [{ $eq: ['$PERSON_GENDER', '1'] }, 1, 0],
+          },
+        },
+        femaleCount: {
+          $sum: {
+            $cond: [{ $eq: ['$PERSON_GENDER', '2'] }, 1, 0],
+          },
+        },
+      },
+    },
+    { $project: { _id: 0 } },
+    { $sort: { year: 1 } },
+  ]);
+  console.log('------------------------------------');
+  console.log(results);
+  console.log('------------------------------------');
+  const years = enumerateBetweenYear(START_YEAR, END_YEAR);
+  const resultsKeyByYear = keyBy(results, 'year');
+  const finalizedResults = years.map((year) => ({
+    year,
+    maleCount: resultsKeyByYear[year]?.maleCount || 0,
+    femaleCount: resultsKeyByYear[year]?.femaleCount || 0,
+  }));
+
+  res.status(200).json(finalizedResults);
+});
 
 /**
  * @swagger
@@ -98,15 +145,15 @@ router.get('/year-gender-accident-count', (req, res) => res.status(200).send('ye
  *                    income:
  *                      type: array
  *                      items:
- *                       type: string
+ *                       type: integer
  *                    lifeExpectancy:
  *                      type: array
  *                      items:
- *                       type: string
+ *                       type: integer
  *                    population:
  *                      type: array
  *                      items:
- *                       type: string
+ *                       type: integer
  *
 */
 router.get('/age-year-dead-accident', (req, res) => {
@@ -186,7 +233,7 @@ router.get('/age-year-dead-accident', (req, res) => {
  *                    target:
  *                      type: string
  *                    count:
- *                      type: string
+ *                      type: integer
  *
 */
 router.get('/road-type-road-skin-accident-count', (req, res) => res.status(200).send('road-type-road-skin-accident-count'));
