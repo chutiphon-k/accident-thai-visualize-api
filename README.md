@@ -42,6 +42,10 @@ yarn dev
 open http://localhost:<port>/api
 ```
 
+## Add dataset to DB
+- Add dataset file to folder temp and reanme to dataset.csv
+- Send request to POST /datasets (Can send request by Swagger Ui)
+
 ## License
 
 Nest is [MIT licensed](LICENSE).
