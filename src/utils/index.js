@@ -1,2 +1,2 @@
 // eslint-disable-next-line import/prefer-default-export
-export { default as enumerateBetweenYear } from './enumerateBetweenYear';
+export { default as enumerateBetweenNumber } from './enumerateBetweenNumber';
