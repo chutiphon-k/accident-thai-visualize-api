@@ -1,7 +1,5 @@
 import { Router } from 'express';
-import {
-  keyBy, flatten, chain, map,
-} from 'lodash';
+import { keyBy, chain, map } from 'lodash';
 
 import { AccidentModel } from '../models';
 import { enumerateBetweenNumber } from '../utils';
@@ -248,6 +246,56 @@ router.get('/age-year-dead-accident-summary', async (req, res) => {
  *                      type: integer
  *
 */
-router.get('/road-type-road-skin-accident-count', (req, res) => res.status(200).send('road-type-road-skin-accident-count'));
+router.get('/road-type-road-skin-accident-count', async (req, res) => {
+  const results = await AccidentModel.aggregate([
+    { $match: { ACCIDENT_YEAR: { $gte: START_YEAR, $lte: END_YEAR } } },
+    {
+      $group: {
+        _id: { target: '$ROADTYPE_ID', source: '$ROADSKIN_ID' },
+        target: { $first: '$ROADTYPE_ID' },
+        source: { $first: '$ROADSKIN_ID' },
+        count: { $sum: 1 },
+      },
+    },
+    { $project: { _id: 0 } },
+    { $sort: { source: 1, target: 1 } },
+  ]);
+
+  const finalizedResults = results.map(({ target, source, ...rest }) => ({
+    source: (() => {
+      switch (source) {
+        case '1':
+          return 'แห้ง';
+        case '2':
+          return 'เปียก';
+        case '3':
+          return 'เป็นคลื่น / หลุมบ่อ';
+        case '4':
+          return 'อื่นๆ';
+        default:
+          return 'ไม่ระบุ';
+      }
+    })(),
+    target: (() => {
+      switch (target) {
+        case '1':
+          return 'ถนนกรมทางหลวง';
+        case '2':
+          return 'ถนนกรมทางหลวงชนบท';
+        case '3':
+          return 'ถนนในเมือง (เทศบาล)';
+        case '4':
+          return 'ถนนใน อบค. / หมู่บ้าน';
+        case '5':
+          return 'อื่นๆ';
+        default:
+          return 'ไม่ระบุ';
+      }
+    })(),
+    ...rest,
+  }));
+
+  res.status(200).json(finalizedResults);
+});
 
 export default router;

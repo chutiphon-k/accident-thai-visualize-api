@@ -30,7 +30,7 @@ router.get('/health', (req, res) => res.status(200).send('🩺 service is availa
  *  post:
  *    summary: Bulk create dataset
  *    responses:
- *      200:
+ *      201:
  *        description: Return "ok"
  *
 */
@@ -49,7 +49,7 @@ router.post('/datasets', async (req, res) => {
   await AccidentModel.deleteMany();
   await AccidentModel.insertMany(finalizedData);
 
-  res.status(200).send('ok');
+  res.status(201).send('ok');
 });
 
 router.use('/stats', stats);
