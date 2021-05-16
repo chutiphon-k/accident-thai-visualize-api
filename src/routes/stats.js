@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { AccidentModel } from '../models';
 
 const router = Router();
 
@@ -29,7 +30,22 @@ const router = Router();
  *                    count:
  *                      type: string
 */
-router.get('/year-accident-count', (req, res) => res.status(200).send('year-accident-count'));
+router.get('/year-accident-count', async (req, res) => {
+  const results = await AccidentModel.aggregate([
+    { $match: { ACCIDENT_YEAR: { $gte: '2010', $lte: '2019' } } },
+    {
+      $group: {
+        _id: '$ACCIDENT_YEAR',
+        year: { $first: '$ACCIDENT_YEAR' },
+        count: { $sum: 1 },
+      },
+    },
+    { $project: { _id: 0 } },
+    { $sort: { year: 1 } },
+  ]);
+
+  res.status(200).json(results);
+});
 
 /**
  * @swagger

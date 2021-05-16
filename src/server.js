@@ -36,6 +36,7 @@ const start = async () => {
       useUnifiedTopology: true,
       connectTimeoutMS: 3000,
     });
+    mongoose.set('debug', true);
     await app.listen(PORT);
     // eslint-disable-next-line no-console
     console.log(`🚀 server listening on ${PORT}`);

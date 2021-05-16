@@ -41,8 +41,13 @@ router.post('/datasets', async (req, res) => {
   if (!fs.existsSync(filePath)) throw Boom.notFound('dateset file not found, please check path or filename');
 
   const json = await csvtojson().fromFile(filePath);
+  const finalizedData = json.map(({ ACCIDENT_YEAR, ...rest }) => ({
+    ...rest,
+    ACCIDENT_YEAR: ACCIDENT_YEAR.length === 1 ? `200${ACCIDENT_YEAR}` : `20${ACCIDENT_YEAR}`,
+  }));
+
   await AccidentModel.deleteMany();
-  await AccidentModel.insertMany(json);
+  await AccidentModel.insertMany(finalizedData);
 
   res.status(200).send('ok');
 });
